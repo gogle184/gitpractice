@@ -1,0 +1,27 @@
+version: '3'
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    environment:
+      MINIO_ROOT_USER: user
+      MINIO_ROOT_PASSWORD: password
+    entrypoint: /bin/sh -c "
+      minio server /data --console-address :8080 &
+      while ! (/usr/bin/mc alias set myminio http://localhost:9000 user password); do echo '...waiting for minio...'; sleep 5; done;
+      /usr/bin/mc mb myminio/bucket-a;
+      /usr/bin/mc mb myminio/bucket-b;
+      /usr/bin/mc policy set download myminio/bucket-a;
+      /usr/bin/mc policy set download myminio/bucket-b;
+      wait"
+    volumes:
+      - ./minio_data:/export
+    ports:
+      - "9090:9000"
+      - "8080:8080"
+    networks:
+      - shared-network
+
+networks:
+  shared-network:
+    external: true
